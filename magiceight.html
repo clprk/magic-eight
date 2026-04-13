@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Magic 8 Ball</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, #1c1c38 0%, transparent 65%),
+        #0b0b12;
+      padding: 2rem;
+      gap: 2.5rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow: hidden;
+    }
+
+    /* ── Shake wrapper ── */
+    .shake-wrapper {
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+      border-radius: 50%;
+    }
+
+    .shake-wrapper.is-shaking {
+      animation: shake 1.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translate(0, 0) rotate(0deg);
+      }
+
+      7% {
+        transform: translate(-11px, -2px) rotate(-2.5deg);
+      }
+
+      15% {
+        transform: translate(11px, 2px) rotate(2.5deg);
+      }
+
+      23% {
+        transform: translate(-13px, -2px) rotate(-1.8deg);
+      }
+
+      31% {
+        transform: translate(13px, 2px) rotate(1.8deg);
+      }
+
+      40% {
+        transform: translate(-10px, -1px) rotate(-1.3deg);
+      }
+
+      49% {
+        transform: translate(10px, 1px) rotate(1.3deg);
+      }
+
+      58% {
+        transform: translate(-7px, 0) rotate(-0.8deg);
+      }
+
+      67% {
+        transform: translate(7px, 0) rotate(0.8deg);
+      }
+
+      78% {
+        transform: translate(-4px, 0) rotate(-0.3deg);
+      }
+
+      89% {
+        transform: translate(3px, 0) rotate(0deg);
+      }
+    }
+
+    /* ── 3-D flip ── */
+    .perspective-box {
+      perspective: 900px;
+    }
+
+    .flip-inner {
+      width: 280px;
+      height: 280px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.52s cubic-bezier(0.45, 0, 0.55, 1);
+      will-change: transform;
+    }
+
+    .flip-inner.is-flipped {
+      transform: rotateY(180deg);
+    }
+
+    /* ── Ball faces ── */
+    .face {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      overflow: hidden;
+    }
+
+    .face-front {
+      background: radial-gradient(circle at 36% 30%,
+          #38384e 0%,
+          #1d1d2e 38%,
+          #0e0e1a 72%,
+          #080810 100%);
+      box-shadow:
+        0 32px 90px rgba(0, 0, 0, 0.75),
+        0 8px 24px rgba(0, 0, 0, 0.55),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+        inset -28px -28px 56px rgba(0, 0, 0, 0.65),
+        inset 14px 14px 28px rgba(130, 130, 200, 0.07);
+    }
+
+    .face-back {
+      background: radial-gradient(circle at 64% 30%,
+          #38384e 0%,
+          #1d1d2e 38%,
+          #0e0e1a 72%,
+          #080810 100%);
+      box-shadow:
+        0 32px 90px rgba(0, 0, 0, 0.75),
+        0 8px 24px rgba(0, 0, 0, 0.55),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+        inset 28px -28px 56px rgba(0, 0, 0, 0.65),
+        inset -14px 14px 28px rgba(130, 130, 200, 0.07);
+      transform: rotateY(180deg);
+    }
+
+    /* Specular highlight */
+    .highlight {
+      position: absolute;
+      width: 74px;
+      height: 50px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(255, 255, 255, 0.13) 0%, transparent 70%);
+      top: 13%;
+      left: 17%;
+      pointer-events: none;
+    }
+
+    .face-back .highlight {
+      left: auto;
+      right: 17%;
+    }
+
+    /* ── 8 label ── */
+    .eight-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .eight-text {
+      font-size: 130px;
+      font-weight: 900;
+      font-family: Georgia, 'Times New Roman', serif;
+      color: rgba(255, 255, 255, 0.84);
+      line-height: 1;
+      text-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+      letter-spacing: -5px;
+      pointer-events: none;
+    }
+
+    /* ── Answer window ── */
+
+    .window-container {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .window {
+      width: 124px;
+      height: 124px;
+      border-radius: 50%;
+      background: #070920;
+      border: 1.5px solid rgba(110, 140, 255, .22);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-shadow: inset 0 0 28px rgba(60, 90, 255, .18), 0 0 10px rgba(60, 90, 255, .06)
+    }
+
+    .answer-text {
+      color: #99b2ff;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.38;
+      text-transform: uppercase;
+      letter-spacing: .9px;
+      opacity: 0;
+      transition: opacity .55s ease .08s;
+      pointer-events: none
+    }
+
+    .answer-text.visible {
+      opacity: 1
+    }
+
+    /* ── Ground shadow ── */
+    .ground-shadow {
+      width: 200px;
+      height: 18px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(0, 0, 0, 0.55) 0%, transparent 70%);
+      margin-top: -30px;
+      pointer-events: none;
+    }
+
+    /* ── Hint text ── */
+    .hint {
+      font-size: 15px;
+      text-align: center;
+      font-style: italic;
+      letter-spacing: 0.25px;
+      transition: color 0.45s ease, opacity 0.45s ease;
+      min-height: 1.5em;
+    }
+
+    .hint-idle {
+      color: rgba(255, 255, 255, 0.38);
+    }
+
+    .hint-animating {
+      color: rgba(255, 255, 255, 0.14);
+    }
+
+    .hint-revealed {
+      color: rgba(255, 255, 255, 0.28);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 380px) {
+      .flip-inner {
+        width: 240px;
+        height: 240px;
+      }
+
+      .eight-text {
+        font-size: 110px;
+      }
+
+      .window {
+        width: 112px;
+        height: 112px;
+      }
+
+      .ground-shadow {
+        width: 170px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="shake-wrapper" id="ballWrap" role="button" tabindex="0" aria-label="Magic 8 Ball — tap for your answer">
+    <div class="perspective-box">
+      <div class="flip-inner" id="flipInner">
+
+        <!-- Front face (number 8) -->
+        <div class="face face-front">
+          <div class="highlight"></div>
+          <div class="eight-label">
+            <span class="eight-text">8</span>
+          </div>
+        </div>
+
+        <!-- Back face (answer window) -->
+        <div class="face face-back">
+          <div class="highlight"></div>
+          <div class="window-container">
+            <div class="window">
+              <p class="answer-text" id="answerText"></p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="ground-shadow"></div>
+
+  <p class="hint hint-idle" id="hint">Set your intention… and tap when ready.</p>
+
+  <script>
+    const RESPONSES = [
+      "It is certain", "It is decidedly so", "Without a doubt",
+      "Yes, definitely", "You may rely on it", "As I see it, yes",
+      "Most likely", "Outlook good", "Yes", "Signs point to yes",
+      "Reply hazy, try again", "Ask again later", "Better not tell you now",
+      "Cannot predict now", "Concentrate and ask again",
+      "Don't count on it", "My reply is no", "My sources say no",
+      "Outlook not so good", "Very doubtful",
+    ];
+
+    // ── DOM refs ──
+    const ballWrap = document.getElementById('ballWrap');
+    const flipInner = document.getElementById('flipInner');
+    const answerEl = document.getElementById('answerText');
+    const hintEl = document.getElementById('hint');
+
+    // ── State ──
+    let phase = 'idle';   // 'idle' | 'animating' | 'revealed'
+    let isFlipped = false;
+    const timers = [];
+
+    // ── Helpers ──
+    const after = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); };
+    const clearAll = () => { timers.forEach(clearTimeout); timers.length = 0; };
+    const pickRandom = () => RESPONSES[Math.floor(Math.random() * RESPONSES.length)];
+
+    function setHint(p) {
+      hintEl.className = 'hint hint-' + p;
+      hintEl.textContent =
+        p === 'idle' ? 'Set your intention… and tap when ready.' :
+          p === 'animating' ? '· · ·' :
+            'Tap again for another answer.';
+    }
+
+    // ── Main sequence ──
+    function runSequence() {
+      clearAll();
+      const next = pickRandom();
+
+      answerEl.classList.remove('visible');
+      ballWrap.classList.remove('is-shaking');
+      phase = 'animating';
+      setHint('animating');
+
+      function flipForwardAndShake() {
+        flipInner.classList.add('is-flipped');
+        isFlipped = true;
+
+        after(() => {
+          ballWrap.classList.add('is-shaking');
+
+          after(() => {
+            ballWrap.classList.remove('is-shaking');
+            answerEl.textContent = next;
+            answerEl.classList.add('visible');
+            phase = 'revealed';
+            setHint('revealed');
+          }, 1640);
+        }, 560);
+      }
+
+      if (isFlipped) {
+        // Already on answer side — flip back first, then run full sequence
+        flipInner.classList.remove('is-flipped');
+        isFlipped = false;
+        after(flipForwardAndShake, 560);
+      } else {
+        flipForwardAndShake();
+      }
+    }
+
+    // ── Event listeners ──
+    function handleTap() {
+      if (phase === 'animating') return;
+      runSequence();
+    }
+
+    ballWrap.addEventListener('click', handleTap);
+    ballWrap.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') handleTap();
+    });
+  </script>
+
+</body>
+
+</html>
